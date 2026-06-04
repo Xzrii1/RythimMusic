@@ -117,7 +117,6 @@ private val collaborators = listOf(
 
 private val communityLinks = listOf(
     CommunityLink(R.string.credits_github, R.drawable.github, "https://github.com/yamzzdev"),
-),
     CommunityLink(R.string.credits_telegram, R.drawable.telegram, "https://t.me/metrolistapp"),
     CommunityLink(R.string.credits_view_repo, R.drawable.github, "https://github.com/MetrolistGroup/Metrolist"),
     CommunityLink(R.string.credits_license_name, R.drawable.info, "https://github.com/MetrolistGroup/Metrolist/blob/main/LICENSE")
