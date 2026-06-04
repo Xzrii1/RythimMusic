@@ -49,28 +49,16 @@ jobs:
         with:
           cache-cleanup: on-success
 
-      - name: Grant execute permission for gradlew
+      - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: Ensure dummy discord AAR exists
+      - name: Create dummy discord AAR
         run: |
           mkdir -p app/libs
-          if [ ! -f "app/libs/discord_partner_sdk.aar" ]; then
-            python3 -c "
-import zipfile
-with zipfile.ZipFile('app/libs/discord_partner_sdk.aar', 'w') as z:
-    z.writestr('AndroidManifest.xml', '<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" package=\"com.discord.sdk\"></manifest>')
-print('Dummy AAR created')
-"
-          fi
+          python3 -c "import zipfile; z=zipfile.ZipFile('app/libs/discord_partner_sdk.aar','w'); z.writestr('AndroidManifest.xml','<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" package=\"com.discord.sdk\"></manifest>'); z.close()"
 
       - name: Build Release APK
-        run: |
-          ./gradlew --console=plain \
-            assemble${{ matrix.variantName }}Release \
-            --warning-mode summary \
-            -x lint \
-            --stacktrace
+        run: ./gradlew --console=plain assemble${{ matrix.variantName }}Release --warning-mode summary -x lint --stacktrace
         env:
           RYTHIM_APPLICATION_ID: com.rythim.music
           RYTHIM_APP_NAME: Rythim Music
@@ -79,7 +67,6 @@ print('Dummy AAR created')
 
       - name: Sign APK
         uses: ilharp/sign-android-release@v2.0.0
-        id: sign_apk
         with:
           releaseDir: app/build/outputs/apk/${{ matrix.variant }}/release/
           signingKey: ${{ secrets.KEYSTORE }}
@@ -88,14 +75,13 @@ print('Dummy AAR created')
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           buildToolsVersion: 35.0.0
 
-      - name: Rename and move signed APK
+      - name: Move signed APK
         run: |
           OUTPUT_DIR="app/build/outputs/apk/${{ matrix.variant }}/release"
           mkdir -p "$OUTPUT_DIR/out"
-          find "$OUTPUT_DIR" -maxdepth 1 \( -name "*-signed.apk" -o -name "*-unsigned-signed.apk" \) \
-            -exec mv {} "$OUTPUT_DIR/out/${{ matrix.apkName }}" \;
+          find "$OUTPUT_DIR" -maxdepth 1 \( -name "*-signed.apk" -o -name "*-unsigned-signed.apk" \) -exec mv {} "$OUTPUT_DIR/out/${{ matrix.apkName }}" \;
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.apkName }}
