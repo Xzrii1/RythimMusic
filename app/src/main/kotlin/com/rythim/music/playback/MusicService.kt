@@ -202,7 +202,7 @@ import com.rythim.music.utils.YTPlayerUtils
 import com.rythim.music.utils.dataStore
 import com.rythim.music.utils.get
 import com.rythim.music.utils.reportException
-import com.rythim.music.widget.MetrolistWidgetManager
+import com.rythim.music.widget.RythimWidgetManager
 import com.rythim.music.widget.MusicWidgetReceiver
 import com.rythim.music.widget.PlaylistWidgetReceiver
 import com.rythim.music.ui.utils.resize
@@ -272,7 +272,7 @@ class MusicService :
     lateinit var eqProfileRepository: EQProfileRepository
 
     @Inject
-    lateinit var widgetManager: MetrolistWidgetManager
+    lateinit var widgetManager: RythimWidgetManager
 
     @Inject
     lateinit var listenTogetherManager: com.rythim.music.listentogether.ListenTogetherManager
