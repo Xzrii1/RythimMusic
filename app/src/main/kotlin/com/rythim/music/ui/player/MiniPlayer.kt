@@ -147,7 +147,7 @@ fun MiniPlayer(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    val useNewMiniPlayerDesign by rememberPreference(UseNewMiniPlayerDesignKey, true)
+    val useNewMiniPlayerDesign by rememberPreference(UseNewMiniPlayerDesignKey, false)
 
     // Create stable progress state - doesn't cause recomposition on position changes
     val progressState = remember { ProgressState(positionState, durationState) }
@@ -857,15 +857,32 @@ private fun LegacyMiniPlayer(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                    .padding(end = 12.dp),
+                    .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) },
         ) {
             Box(Modifier.weight(1f)) {
                 mediaMetadata?.let {
                     LegacyMiniMediaInfo(
                         mediaMetadata = it,
                         pureBlack = pureBlack,
-                        modifier = Modifier.padding(horizontal = 6.dp),
+                        modifier = Modifier,
+                    )
+                }
+            }
+
+            // Heart (favorite) button
+            val isSongLocal = mediaMetadata?.isLocal ?: false
+            if (!isSongLocal) {
+                val currentSong by playerConnection.currentSong.collectAsStateWithLifecycle(initialValue = null)
+                val liked = currentSong?.song?.liked ?: false
+                IconButton(
+                    onClick = { playerConnection.toggleLike() },
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(if (liked) R.drawable.favorite else R.drawable.favorite_border),
+                        contentDescription = null,
+                        tint = if (liked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
             }
@@ -881,9 +898,16 @@ private fun LegacyMiniPlayer(
             IconButton(
                 enabled = canSkipNext && !isListenTogetherGuest,
                 onClick = if (isListenTogetherGuest) ({}) else ({ playerConnection.seekToNext() }),
+                modifier = Modifier.size(40.dp),
             ) {
-                Icon(painter = painterResource(R.drawable.skip_next), contentDescription = null)
+                Icon(
+                    painter = painterResource(R.drawable.skip_next),
+                    contentDescription = null,
+                    modifier = Modifier.size(26.dp),
+                )
             }
+
+            Spacer(Modifier.width(4.dp))
         }
 
         // Swipe indicator
@@ -972,9 +996,8 @@ private fun LegacyMiniMediaInfo(
         Box(
             modifier =
                 Modifier
-                    .padding(6.dp)
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius)),
+                    .size(MiniPlayerHeight)
+                    .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 0.dp, topEnd = 0.dp, bottomEnd = 0.dp)),
         ) {
             Box(
                 modifier =
@@ -1020,13 +1043,13 @@ private fun LegacyMiniMediaInfo(
             modifier =
                 Modifier
                     .weight(1f)
-                    .padding(horizontal = 6.dp),
+                    .padding(horizontal = 12.dp),
         ) {
             Text(
                 text = mediaMetadata.title,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.basicMarquee(),
@@ -1035,7 +1058,7 @@ private fun LegacyMiniMediaInfo(
              if (mediaMetadata.artists.any { it.name.isNotBlank() }) {
                  Text(
                      text = mediaMetadata.artists.joinToArtistString(" ${stringResource(R.string.and)} ") { it.name },
-                     color = MaterialTheme.colorScheme.secondary,
+                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

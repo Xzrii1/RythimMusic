@@ -986,9 +986,11 @@ class MainActivity : ComponentActivity() {
                     .map { it[AccountNameKey] ?: "" }
                     .collectAsStateWithLifecycle(initialValue = null)
 
+                val showWelcomeScreen = accountName != null && accountName!!.isBlank()
+
                 LaunchedEffect(accountName) {
                     if (accountName != null && accountName!!.isBlank()) {
-                        showAccountDialog = true
+                        showAccountDialog = false
                     }
                 }
 
@@ -1390,6 +1392,12 @@ class MainActivity : ComponentActivity() {
                                 homeViewModel.refresh()
                             },
                             latestVersionName = latestVersionName,
+                        )
+                    }
+
+                    if (showWelcomeScreen) {
+                        com.rythim.music.ui.screens.WelcomeScreen(
+                            onLoginClick = { showAccountDialog = true }
                         )
                     }
 
