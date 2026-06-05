@@ -6,6 +6,8 @@
 package com.rythim.music.ui.screens.settings.integrations
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -59,6 +61,26 @@ fun IntegrationScreen(
                         navController.navigate("settings/integrations/lastfm")
                     }
                 )
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        IntegrationCard(
+            title = stringResource(R.string.coming_soon),
+            items = listOf(
+                IntegrationCardItem(
+                    icon = painterResource(R.drawable.discord),
+                    title = { Text(stringResource(R.string.discord_bridge)) },
+                    description = { Text(stringResource(R.string.discord_bridge_desc)) },
+                    isComingSoon = true,
+                ),
+                IntegrationCardItem(
+                    icon = painterResource(R.drawable.group),
+                    title = { Text(stringResource(R.string.listen_together)) },
+                    description = { Text(stringResource(R.string.listen_together_coming_soon)) },
+                    isComingSoon = true,
+                ),
             )
         )
     }
