@@ -185,7 +185,7 @@ import com.rythim.music.ui.screens.settings.DarkMode
 import com.rythim.music.ui.screens.settings.NavigationTab
 import com.rythim.music.ui.theme.ColorSaver
 import com.rythim.music.ui.theme.DefaultThemeColor
-import com.rythim.music.ui.theme.MetrolistTheme
+import com.rythim.music.ui.theme.RythimTheme
 import com.rythim.music.ui.theme.extractThemeColor
 import com.rythim.music.ui.utils.appBarScrollBehavior
 import com.rythim.music.ui.utils.resetHeightOffset
@@ -646,7 +646,7 @@ class MainActivity : ComponentActivity() {
                 }
         }
 
-        MetrolistTheme(
+        RythimTheme(
             darkTheme = useDarkTheme,
             pureBlack = pureBlack,
             themeColor = themeColor,

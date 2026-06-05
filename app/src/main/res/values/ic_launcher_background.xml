@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#000000</color>
-    <color name="teal_200">#80CBC4</color>
-    <color name="teal_700">#00796B</color>
+    <color name="ic_launcher_background">#1A1A2E</color>
+    <color name="rythim_accent">#A78BFA</color>
+    <color name="rythim_accent_dark">#6D4FFF</color>
 </resources>

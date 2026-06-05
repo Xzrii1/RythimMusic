@@ -79,7 +79,7 @@ import com.rythim.music.constants.PureBlackKey
 import com.rythim.music.constants.PureBlackMiniPlayerKey
 import com.rythim.music.constants.SelectedThemeColorKey
 import com.rythim.music.ui.theme.DefaultThemeColor
-import com.rythim.music.ui.theme.MetrolistTheme
+import com.rythim.music.ui.theme.RythimTheme
 import com.rythim.music.utils.rememberEnumPreference
 import com.rythim.music.utils.rememberPreference
 
@@ -674,7 +674,7 @@ fun ThemeMockup(
         DarkMode.OFF -> false
     }
 
-    MetrolistTheme(
+    RythimTheme(
         darkTheme = useDark,
         pureBlack = pureBlack,
         themeColor = themeColor
@@ -782,7 +782,7 @@ fun ThemeMockupPortrait(
         DarkMode.OFF -> false
     }
 
-    MetrolistTheme(
+    RythimTheme(
         darkTheme = useDark,
         pureBlack = pureBlack,
         themeColor = themeColor

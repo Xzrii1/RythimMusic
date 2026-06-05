@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.rythim.music.R
-import com.rythim.music.ui.theme.MetrolistTheme
+import com.rythim.music.ui.theme.RythimTheme
 import com.rythim.music.utils.CrashHandler
 import java.io.File
 import java.text.SimpleDateFormat
@@ -60,7 +60,7 @@ class CrashActivity : ComponentActivity() {
         
         setContent {
             val darkTheme = isSystemInDarkTheme()
-            MetrolistTheme(darkTheme = darkTheme) {
+            RythimTheme(darkTheme = darkTheme) {
                 CrashScreen(
                     crashLog = crashLog,
                     onClose = { finishAffinity() },

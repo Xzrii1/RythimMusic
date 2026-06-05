@@ -116,10 +116,11 @@ private val collaborators = listOf(
 )
 
 private val communityLinks = listOf(
-    CommunityLink(R.string.credits_github, R.drawable.github, "https://github.com/yamzzdev"),
+    CommunityLink(R.string.credits_github, R.drawable.github, "https://github.com/Yamzzdev"),
+    CommunityLink(R.string.credits_website, R.drawable.info, "https://yamzzprofile.eu.cc"),
     CommunityLink(R.string.credits_telegram, R.drawable.telegram, "https://t.me/metrolistapp"),
-    CommunityLink(R.string.credits_view_repo, R.drawable.github, "https://github.com/MetrolistGroup/Metrolist"),
-    CommunityLink(R.string.credits_license_name, R.drawable.info, "https://github.com/MetrolistGroup/Metrolist/blob/main/LICENSE")
+    CommunityLink(R.string.credits_view_repo, R.drawable.github, "https://github.com/Yamzzdev/Rythim-Music"),
+    CommunityLink(R.string.credits_license_name, R.drawable.info, "https://github.com/Yamzzdev/Rythim-Music/blob/main/LICENSE")
 )
 
 private fun handleEasterEggClick(
@@ -190,19 +191,19 @@ private fun DeveloperSocials(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         FilledTonalButton(
-            onClick = { uriHandler.openUri("https://metrolist.cc") },
+            onClick = { uriHandler.openUri("https://yamzzprofile.eu.cc") },
             modifier = Modifier.weight(1f).height(48.dp)
         ) {
             Icon(painterResource(R.drawable.language), contentDescription = null)
         }
         FilledTonalButton(
-            onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") },
+            onClick = { uriHandler.openUri("https://github.com/Yamzzdev") },
             modifier = Modifier.weight(1f).height(48.dp)
         ) {
             Icon(painterResource(R.drawable.github), contentDescription = null)
         }
         FilledTonalButton(
-            onClick = { uriHandler.openUri("https://www.instagram.com/mostafaalagamy") },
+            onClick = { uriHandler.openUri("https://tiktok.com/@ymzzzoff") },
             modifier = Modifier.weight(1f).height(48.dp)
         ) {
             Icon(painterResource(R.drawable.instagram), contentDescription = null)
@@ -389,7 +390,7 @@ fun AboutScreen(
                 Spacer(Modifier.height(16.dp))
                 
                 Button(
-                    onClick = { uriHandler.openUri("https://buymeacoffee.com/mostafaalagamy") },
+                    onClick = { uriHandler.openUri("https://saweria.co/FellMD") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
