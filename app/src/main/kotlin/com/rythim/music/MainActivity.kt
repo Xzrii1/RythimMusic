@@ -128,6 +128,7 @@ import coil3.toBitmap
 import com.rythim.innertube.YouTube
 import com.rythim.innertube.models.SongItem
 import com.rythim.innertube.models.WatchEndpoint
+import com.rythim.music.constants.AccountNameKey
 import com.rythim.music.constants.AppBarHeight
 import com.rythim.music.constants.AppLanguageKey
 import com.rythim.music.constants.CheckForUpdatesKey
@@ -980,6 +981,16 @@ class MainActivity : ComponentActivity() {
                     }
 
                 var showAccountDialog by remember { mutableStateOf(false) }
+
+                val accountName by dataStore.data
+                    .map { it[AccountNameKey] ?: "" }
+                    .collectAsStateWithLifecycle(initialValue = null)
+
+                LaunchedEffect(accountName) {
+                    if (accountName != null && accountName!!.isBlank()) {
+                        showAccountDialog = true
+                    }
+                }
 
                 val pauseListenHistory by rememberPreference(PauseListenHistoryKey, defaultValue = false)
                 val eventCount by database.eventCount().collectAsStateWithLifecycle(initialValue = 0)
