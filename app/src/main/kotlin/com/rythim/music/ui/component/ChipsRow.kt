@@ -73,15 +73,23 @@ fun <E> ChipsRow(
         Spacer(Modifier.width(12.dp))
 
         chips.forEach { (value, label) ->
+            val isSelected = currentValue == value
             FilterChip(
                 label = { Text(label) },
-                selected = currentValue == value,
+                selected = isSelected,
                 colors = FilterChipDefaults.filterChipColors(
-                    containerColor = containerColor,
+                    containerColor = Color.Transparent,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+                border = if (isSelected) null else FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = false,
+                    borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                 ),
                 onClick = { onValueUpdate(value) },
-                shape = RoundedCornerShape(16.dp),
-                border = null
+                shape = RoundedCornerShape(50.dp),
             )
 
             Spacer(Modifier.width(8.dp))
