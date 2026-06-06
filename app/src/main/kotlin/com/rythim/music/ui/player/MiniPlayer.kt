@@ -869,10 +869,10 @@ private fun LegacyMiniPlayer(
                 }
             }
 
-            // Heart (favorite) button
-            val isSongLocal = mediaMetadata?.isLocal ?: false
+            // Heart (favorite) button — hidden for local-only songs (can't be liked on YouTube)
+            val currentSong by playerConnection.currentSong.collectAsStateWithLifecycle(initialValue = null)
+            val isSongLocal = currentSong?.song?.isLocal ?: false
             if (!isSongLocal) {
-                val currentSong by playerConnection.currentSong.collectAsStateWithLifecycle(initialValue = null)
                 val liked = currentSong?.song?.liked ?: false
                 IconButton(
                     onClick = { playerConnection.toggleLike() },
