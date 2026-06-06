@@ -268,4 +268,59 @@ Output MUST be a JSON array with EXACTLY $lineCount strings."""
             }
             return@withContext Result.failure(Exception("Max retries exceeded"))
         }
+
+    suspend fun summarize(
+        songTitle: String,
+        artistName: String,
+        apiKey: String,
+        baseUrl: String,
+        model: String,
+    ): Result<String> =
+        withContext(Dispatchers.IO) {
+            if (apiKey.isBlank()) return@withContext Result.failure(Exception("API key required"))
+            try {
+                val messages =
+                    JSONArray().apply {
+                        put(JSONObject().apply {
+                            put("role", "system")
+                            put("content", "You are a knowledgeable music expert. Write concise, engaging song insights in 3–4 sentences.")
+                        })
+                        put(JSONObject().apply {
+                            put("role", "user")
+                            put("content", "Tell me about the song \"$songTitle\" by $artistName — what it\'s about, its themes, musical style, and what makes it special or notable. Be conversational and insightful.")
+                        })
+                    }
+                val body =
+                    JSONObject().apply {
+                        if (model.isNotBlank()) put("model", model)
+                        put("messages", messages)
+                        put("temperature", 0.7)
+                        put("max_tokens", 300)
+                    }
+                val request =
+                    Request.Builder()
+                        .url(baseUrl.ifBlank { "https://openrouter.ai/api/v1/chat/completions" })
+                        .addHeader("Authorization", "Bearer ${apiKey.trim()}")
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("HTTP-Referer", "https://github.com/Yamzzdev/Rythim-Music")
+                        .addHeader("X-Title", "Rythim Music")
+                        .post(body.toString().toRequestBody(JSON))
+                        .build()
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string()
+                    ?: return@withContext Result.failure(Exception("Empty response"))
+                if (!response.isSuccessful)
+                    return@withContext Result.failure(Exception("API error ${response.code}: $responseBody"))
+                val content =
+                    JSONObject(responseBody)
+                        .getJSONArray("choices")
+                        .getJSONObject(0)
+                        .getJSONObject("message")
+                        .getString("content")
+                        .trim()
+                Result.success(content)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 }

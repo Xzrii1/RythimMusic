@@ -720,6 +720,13 @@
     <string name="ai_deepl_formality_less">Less formal</string>
     <string name="ai_system_prompt">System prompt</string>
     <string name="ai_system_prompt_desc">Custom instructions sent to the AI model. Leave empty to use the default prompt</string>
+    <string name="ai_song_summary">Song Summary</string>
+    <string name="ai_song_summary_get">Get Summary</string>
+    <string name="ai_song_summary_generating">Getting summary…</string>
+    <string name="ai_song_summary_regenerate">Regenerate</string>
+    <string name="ai_song_summary_deepl_unavailable">DeepL doesn\'t support song summary. Switch provider in AI settings.</string>
+    <string name="ai_set_api_key">Set AI API Key</string>
+    <string name="ai_api_key_hint">Paste your API key here</string>
     <string name="ai_system_prompt_placeholder">Use {lineCount} as a placeholder for the number of lines to translate</string>
     <string name="ai_system_prompt_default">Default</string>
     <string name="ai_system_prompt_reset">Reset to default</string>

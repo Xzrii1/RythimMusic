@@ -89,6 +89,9 @@ import com.rythim.music.constants.OpenRouterDefaultModel
 import com.rythim.music.constants.OpenRouterModelKey
 import com.rythim.music.constants.DeeplFormalityKey
 import com.rythim.music.utils.rememberPreference
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.rythim.music.api.OpenRouterService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,8 +106,8 @@ fun LyricsMenu(
     val context = LocalContext.current
     val database = LocalDatabase.current
     
-    val openRouterApiKey by rememberPreference(OpenRouterApiKey, "")
-    val deeplApiKey by rememberPreference(DeeplApiKey, "")
+    var openRouterApiKey by rememberPreference(OpenRouterApiKey, "")
+    var deeplApiKey by rememberPreference(DeeplApiKey, "")
     val aiProvider by rememberPreference(AiProviderKey, "OpenRouter")
     val translateLanguage by rememberPreference(TranslateLanguageKey, "en")
     val translateMode by rememberPreference(TranslateModeKey, "Literal")
@@ -115,10 +118,17 @@ fun LyricsMenu(
     var showIntervalIndicator by rememberPreference(ShowIntervalIndicatorKey, true)
 
     val hasApiKey = if (aiProvider == "DeepL") deeplApiKey.isNotBlank() else openRouterApiKey.isNotBlank()
-    
+
     // Observe the authoritative translation-active state from the singleton; this persists
     // correctly across menu open/close cycles and avoids the lyricsProvider() race condition.
     val hasTranslations by LyricsTranslationHelper.hasActiveTranslations.collectAsStateWithLifecycle()
+
+    val coroutineScope = rememberCoroutineScope()
+    val songId = mediaMetadataProvider().id
+    var summaryText by rememberSaveable(songId) { mutableStateOf<String?>(null) }
+    var isSummaryLoading by remember { mutableStateOf(false) }
+    var summaryError by rememberSaveable(songId) { mutableStateOf<String?>(null) }
+    var apiKeyInput by rememberSaveable { mutableStateOf("") }
 
     var showEditDialog by rememberSaveable {
         mutableStateOf(false)
@@ -469,6 +479,122 @@ fun LyricsMenu(
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp),
                 columns = 4,
             )
+        }
+
+        item {
+            Column(modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth()) {
+                Text(
+                    text = stringResource(R.string.ai_song_summary),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                if (!hasApiKey) {
+                    OutlinedTextField(
+                        value = apiKeyInput,
+                        onValueChange = { apiKeyInput = it },
+                        label = { Text(stringResource(R.string.ai_api_key_hint)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    TextButton(
+                        onClick = {
+                            if (apiKeyInput.isNotBlank()) {
+                                if (aiProvider == "DeepL") deeplApiKey = apiKeyInput
+                                else openRouterApiKey = apiKeyInput
+                                apiKeyInput = ""
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.End),
+                    ) {
+                        Text(stringResource(R.string.ai_set_api_key))
+                    }
+                } else if (aiProvider == "DeepL") {
+                    Text(
+                        text = stringResource(R.string.ai_song_summary_deepl_unavailable),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    when {
+                        isSummaryLoading -> {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 8.dp),
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(R.string.ai_song_summary_generating),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                        summaryText != null -> {
+                            Text(
+                                text = summaryText!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(bottom = 4.dp),
+                            )
+                            TextButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        isSummaryLoading = true
+                                        summaryError = null
+                                        val metadata = mediaMetadataProvider()
+                                        val result = OpenRouterService.summarize(
+                                            songTitle = metadata.title,
+                                            artistName = metadata.artists.joinToString { it.name },
+                                            apiKey = openRouterApiKey,
+                                            baseUrl = openRouterBaseUrl,
+                                            model = openRouterModel,
+                                        )
+                                        isSummaryLoading = false
+                                        result.onSuccess { summaryText = it }
+                                            .onFailure { summaryError = it.message }
+                                    }
+                                },
+                            ) {
+                                Text(stringResource(R.string.ai_song_summary_regenerate))
+                            }
+                        }
+                        else -> {
+                            if (summaryError != null) {
+                                Text(
+                                    text = summaryError!!,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(bottom = 4.dp),
+                                )
+                            }
+                            TextButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        isSummaryLoading = true
+                                        summaryError = null
+                                        val metadata = mediaMetadataProvider()
+                                        val result = OpenRouterService.summarize(
+                                            songTitle = metadata.title,
+                                            artistName = metadata.artists.joinToString { it.name },
+                                            apiKey = openRouterApiKey,
+                                            baseUrl = openRouterBaseUrl,
+                                            model = openRouterModel,
+                                        )
+                                        isSummaryLoading = false
+                                        result.onSuccess { summaryText = it }
+                                            .onFailure { summaryError = it.message }
+                                    }
+                                },
+                            ) {
+                                Text(stringResource(R.string.ai_song_summary_get))
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         item {
