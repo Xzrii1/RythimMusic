@@ -275,49 +275,92 @@ Output MUST be a JSON array with EXACTLY $lineCount strings."""
         apiKey: String,
         baseUrl: String,
         model: String,
+        provider: String,
     ): Result<String> =
         withContext(Dispatchers.IO) {
             if (apiKey.isBlank()) return@withContext Result.failure(Exception("API key required"))
             try {
-                val messages =
-                    JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("role", "system")
-                            put("content", "You are a knowledgeable music expert. Write concise, engaging song insights in 3–4 sentences.")
-                        })
-                        put(JSONObject().apply {
-                            put("role", "user")
-                            put("content", "Tell me about the song \"$songTitle\" by $artistName — what it\'s about, its themes, musical style, and what makes it special or notable. Be conversational and insightful.")
-                        })
-                    }
-                val body =
-                    JSONObject().apply {
-                        if (model.isNotBlank()) put("model", model)
-                        put("messages", messages)
-                        put("temperature", 0.7)
-                        put("max_tokens", 300)
-                    }
+                val systemPrompt = "You are a knowledgeable music expert. Write concise, engaging song insights in 3–4 sentences."
+                val userPrompt = "Tell me about the song \"$songTitle\" by $artistName — what it\'s about, its themes, musical style, and what makes it special or notable. Be conversational and insightful."
+
+                val isClaude = provider == "Claude"
+
                 val request =
-                    Request.Builder()
-                        .url(baseUrl.ifBlank { "https://openrouter.ai/api/v1/chat/completions" })
-                        .addHeader("Authorization", "Bearer ${apiKey.trim()}")
-                        .addHeader("Content-Type", "application/json")
-                        .addHeader("HTTP-Referer", "https://github.com/Yamzzdev/Rythim-Music")
-                        .addHeader("X-Title", "Rythim Music")
-                        .post(body.toString().toRequestBody(JSON))
-                        .build()
+                    if (isClaude) {
+                        // Anthropic Messages API — distinct format from OpenAI-compatible providers
+                        val messages =
+                            JSONArray().apply {
+                                put(JSONObject().apply {
+                                    put("role", "user")
+                                    put("content", userPrompt)
+                                })
+                            }
+                        val body =
+                            JSONObject().apply {
+                                put("model", model.ifBlank { "claude-haiku-4-5-20251001" })
+                                put("max_tokens", 400)
+                                put("temperature", 0.7)
+                                put("system", systemPrompt)
+                                put("messages", messages)
+                            }
+                        Request.Builder()
+                            .url(baseUrl.ifBlank { "https://api.anthropic.com/v1/messages" })
+                            .addHeader("x-api-key", apiKey.trim())
+                            .addHeader("anthropic-version", "2023-06-01")
+                            .addHeader("Content-Type", "application/json")
+                            .post(body.toString().toRequestBody(JSON))
+                            .build()
+                    } else {
+                        // OpenAI-compatible: OpenRouter, OpenAI, Perplexity, Gemini, XAi, Mistral, Custom
+                        val messages =
+                            JSONArray().apply {
+                                put(JSONObject().apply {
+                                    put("role", "system")
+                                    put("content", systemPrompt)
+                                })
+                                put(JSONObject().apply {
+                                    put("role", "user")
+                                    put("content", userPrompt)
+                                })
+                            }
+                        val body =
+                            JSONObject().apply {
+                                if (model.isNotBlank()) put("model", model)
+                                put("messages", messages)
+                                put("temperature", 0.7)
+                                put("max_tokens", 400)
+                            }
+                        Request.Builder()
+                            .url(baseUrl.ifBlank { "https://openrouter.ai/api/v1/chat/completions" })
+                            .addHeader("Authorization", "Bearer ${apiKey.trim()}")
+                            .addHeader("Content-Type", "application/json")
+                            .addHeader("HTTP-Referer", "https://github.com/Yamzzdev/Rythim-Music")
+                            .addHeader("X-Title", "Rythim Music")
+                            .post(body.toString().toRequestBody(JSON))
+                            .build()
+                    }
+
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string()
                     ?: return@withContext Result.failure(Exception("Empty response"))
                 if (!response.isSuccessful)
                     return@withContext Result.failure(Exception("API error ${response.code}: $responseBody"))
+
                 val content =
-                    JSONObject(responseBody)
-                        .getJSONArray("choices")
-                        .getJSONObject(0)
-                        .getJSONObject("message")
-                        .getString("content")
-                        .trim()
+                    if (isClaude) {
+                        JSONObject(responseBody)
+                            .getJSONArray("content")
+                            .getJSONObject(0)
+                            .getString("text")
+                            .trim()
+                    } else {
+                        JSONObject(responseBody)
+                            .getJSONArray("choices")
+                            .getJSONObject(0)
+                            .getJSONObject("message")
+                            .getString("content")
+                            .trim()
+                    }
                 Result.success(content)
             } catch (e: Exception) {
                 Result.failure(e)

@@ -551,6 +551,7 @@ fun LyricsMenu(
                                             apiKey = openRouterApiKey,
                                             baseUrl = openRouterBaseUrl,
                                             model = openRouterModel,
+                                            provider = aiProvider,
                                         )
                                         isSummaryLoading = false
                                         result.onSuccess { summaryText = it }
@@ -582,6 +583,7 @@ fun LyricsMenu(
                                             apiKey = openRouterApiKey,
                                             baseUrl = openRouterBaseUrl,
                                             model = openRouterModel,
+                                            provider = aiProvider,
                                         )
                                         isSummaryLoading = false
                                         result.onSuccess { summaryText = it }
