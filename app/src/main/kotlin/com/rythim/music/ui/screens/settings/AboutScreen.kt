@@ -118,7 +118,7 @@ private val collaborators = listOf(
 private val communityLinks = listOf(
     CommunityLink(R.string.credits_github, R.drawable.github, "https://github.com/Yamzzdev"),
     CommunityLink(R.string.credits_website, R.drawable.info, "https://rythimapp.my.id"),
-    CommunityLink(R.string.credits_telegram, R.drawable.telegram, "https://t.me/rythimapp"),
+    CommunityLink(R.string.credits_telegram, R.drawable.telegram, "https://t.me/yamzzstore"),
     CommunityLink(R.string.credits_view_repo, R.drawable.github, "https://github.com/Yamzzdev/RythimMusic"),
     CommunityLink(R.string.credits_license_name, R.drawable.info, "https://github.com/Yamzzdev/RythimMusic/blob/main/LICENSE")
 )

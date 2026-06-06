@@ -321,6 +321,7 @@ fun BottomSheetPlayer(
     val currentSong by playerConnection.currentSong.collectAsStateWithLifecycle(initialValue = null)
     val automix by playerConnection.service.automixItems.collectAsStateWithLifecycle()
     val repeatMode by playerConnection.repeatMode.collectAsStateWithLifecycle()
+    val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsStateWithLifecycle()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsStateWithLifecycle()
     val canSkipNext by playerConnection.canSkipNext.collectAsStateWithLifecycle()
     val isMuted by playerConnection.isMuted.collectAsStateWithLifecycle()
@@ -1695,22 +1696,17 @@ fun BottomSheetPlayer(
                         ) {
                             Box(modifier = Modifier.weight(1f)) {
                                 ResizableIconButton(
-                                    icon =
-                                        when (repeatMode) {
-                                            Player.REPEAT_MODE_OFF, Player.REPEAT_MODE_ALL -> R.drawable.repeat
-                                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                                            else -> throw IllegalStateException()
-                                        },
-                                    color = TextBackgroundColor,
+                                    icon = if (shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle,
+                                    color = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else TextBackgroundColor,
                                     modifier =
                                         Modifier
-                                            .size(32.dp)
+                                            .size(44.dp)
                                             .padding(4.dp)
                                             .align(Alignment.Center)
                                             .alpha(if (isListenTogetherGuest) 0.5f else 1f),
                                     enabled = !isListenTogetherGuest,
                                     onClick = {
-                                        playerConnection.player.toggleRepeatMode()
+                                        playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
                                     },
                                 )
                             }
@@ -1722,7 +1718,7 @@ fun BottomSheetPlayer(
                                     color = TextBackgroundColor,
                                     modifier =
                                         Modifier
-                                            .size(32.dp)
+                                            .size(44.dp)
                                             .align(Alignment.Center)
                                             .alpha(if (isListenTogetherGuest) 0.5f else 1f),
                                     onClick = playerConnection::seekToPrevious,
@@ -1734,7 +1730,7 @@ fun BottomSheetPlayer(
                             Box(
                                 modifier =
                                     Modifier
-                                        .size(72.dp)
+                                        .size(84.dp)
                                         .clip(RoundedCornerShape(playPauseRoundness))
                                         .background(textButtonColor)
                                         .clickable {
@@ -1777,7 +1773,7 @@ fun BottomSheetPlayer(
                                     modifier =
                                         Modifier
                                             .align(Alignment.Center)
-                                            .size(36.dp),
+                                            .size(42.dp),
                                 )
                             }
 
@@ -1790,7 +1786,7 @@ fun BottomSheetPlayer(
                                     color = TextBackgroundColor,
                                     modifier =
                                         Modifier
-                                            .size(32.dp)
+                                            .size(44.dp)
                                             .align(Alignment.Center)
                                             .alpha(if (isListenTogetherGuest) 0.5f else 1f),
                                     onClick = playerConnection::seekToNext,
@@ -1798,18 +1794,24 @@ fun BottomSheetPlayer(
                             }
 
                             Box(modifier = Modifier.weight(1f)) {
-                                // For episodes, show saved state (inLibrary); for songs, show liked state
-                                val isEpisode = currentSong?.song?.isEpisode == true
-                                val isFavorite = if (isEpisode) currentSong?.song?.inLibrary != null else currentSong?.song?.liked == true
                                 ResizableIconButton(
-                                    icon = if (isFavorite) R.drawable.favorite else R.drawable.favorite_border,
-                                    color = if (isFavorite) MaterialTheme.colorScheme.error else TextBackgroundColor,
+                                    icon =
+                                        when (repeatMode) {
+                                            Player.REPEAT_MODE_OFF, Player.REPEAT_MODE_ALL -> R.drawable.repeat
+                                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                                            else -> throw IllegalStateException()
+                                        },
+                                    color = if (repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else TextBackgroundColor,
                                     modifier =
                                         Modifier
-                                            .size(32.dp)
+                                            .size(44.dp)
                                             .padding(4.dp)
-                                            .align(Alignment.Center),
-                                    onClick = playerConnection::toggleLike,
+                                            .align(Alignment.Center)
+                                            .alpha(if (isListenTogetherGuest) 0.5f else 1f),
+                                    enabled = !isListenTogetherGuest,
+                                    onClick = {
+                                        playerConnection.player.toggleRepeatMode()
+                                    },
                                 )
                             }
                         }
