@@ -276,12 +276,17 @@ Output MUST be a JSON array with EXACTLY $lineCount strings."""
         baseUrl: String,
         model: String,
         provider: String,
+        targetLanguage: String = "English",
     ): Result<String> =
         withContext(Dispatchers.IO) {
             if (apiKey.isBlank()) return@withContext Result.failure(Exception("API key required"))
             try {
-                val systemPrompt = "You are a knowledgeable music expert. Write concise, engaging song insights in 3–4 sentences."
-                val userPrompt = "Tell me about the song \"$songTitle\" by $artistName — what it\'s about, its themes, musical style, and what makes it special or notable. Be conversational and insightful."
+                val systemPrompt =
+                    "You are a knowledgeable music expert. Write concise, engaging song insights in 3–4 sentences. " +
+                        "Always respond in $targetLanguage, regardless of the song's original language."
+                val userPrompt =
+                    "Tell me about the song \"$songTitle\" by $artistName — what it\'s about, its themes, musical style, " +
+                        "and what makes it special or notable. Be conversational and insightful. Write the entire response in $targetLanguage."
 
                 val isClaude = provider == "Claude"
 

@@ -79,6 +79,7 @@ import com.rythim.music.viewmodels.LyricsMenuViewModel
 import com.rythim.music.constants.OpenRouterApiKey
 import com.rythim.music.constants.DeeplApiKey
 import com.rythim.music.constants.AiProviderKey
+import com.rythim.music.constants.LanguageCodeToName
 import com.rythim.music.constants.TranslateLanguageKey
 import com.rythim.music.constants.TranslateModeKey
 import com.rythim.music.constants.RespectAgentPositioningKey
@@ -552,6 +553,7 @@ fun LyricsMenu(
                                             baseUrl = openRouterBaseUrl,
                                             model = openRouterModel,
                                             provider = aiProvider,
+                                            targetLanguage = LanguageCodeToName[translateLanguage] ?: translateLanguage,
                                         )
                                         isSummaryLoading = false
                                         result.onSuccess { summaryText = it }
@@ -584,6 +586,7 @@ fun LyricsMenu(
                                             baseUrl = openRouterBaseUrl,
                                             model = openRouterModel,
                                             provider = aiProvider,
+                                            targetLanguage = LanguageCodeToName[translateLanguage] ?: translateLanguage,
                                         )
                                         isSummaryLoading = false
                                         result.onSuccess { summaryText = it }
