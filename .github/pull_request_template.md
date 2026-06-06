@@ -1,18 +1,22 @@
-## Problem
-<!-- Describe the issue or limitation this PR addresses  
-DO NOT PR NEW FEATURES, WE'RE ON A FEATURE FREEZE!!! -->
+## Summary
+<!-- What does this PR do? -->
 
-## Cause
-<!-- Explain the root cause of the problem -->
+## Type
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Refactor / cleanup
+- [ ] Docs / strings
 
-## Solution
-<!-- List the changes made to fix the issue -->
+## Changes
+<!-- List the main changes -->
 - 
 
 ## Testing
-<!-- Describe how the changes were tested -->
+<!-- How did you test this? Device, Android version, steps -->
 
 ## Related Issues
-<!-- List any related issues or PRs -->
 - Closes #
 - Related to #
+
+---
+> Make sure your branch is based off `main` and follows the `fix/`, `feat/`, `ref/`, `docs/` naming convention.

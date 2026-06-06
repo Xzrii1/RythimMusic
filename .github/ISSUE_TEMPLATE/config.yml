@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Telegram Channel
+    url: https://t.me/yamzzstore
+    about: Updates, announcements, and community discussion
+  - name: Website
+    url: https://rythimapp.my.id
+    about: Official Rythim Music website
