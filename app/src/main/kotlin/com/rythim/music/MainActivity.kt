@@ -128,8 +128,6 @@ import coil3.toBitmap
 import com.rythim.innertube.YouTube
 import com.rythim.innertube.models.SongItem
 import com.rythim.innertube.models.WatchEndpoint
-import com.rythim.innertube.utils.parseCookieString
-import com.rythim.music.constants.InnerTubeCookieKey
 import com.rythim.music.constants.AppBarHeight
 import com.rythim.music.constants.AppLanguageKey
 import com.rythim.music.constants.CheckForUpdatesKey
@@ -983,22 +981,6 @@ class MainActivity : ComponentActivity() {
 
                 var showAccountDialog by remember { mutableStateOf(false) }
 
-                val innerTubeCookie by dataStore.data
-                    .map { it[InnerTubeCookieKey] ?: "" }
-                    .collectAsStateWithLifecycle(initialValue = null)
-
-                // SAPISID in the cookie is the authoritative "user is logged in" signal —
-                // an AccountName may be blank even for valid sessions (token-based login,
-                // pending profile fetch), so we can't rely on it for gating onboarding.
-                val showWelcomeScreen =
-                    innerTubeCookie != null && "SAPISID" !in parseCookieString(innerTubeCookie!!)
-
-                LaunchedEffect(innerTubeCookie) {
-                    if (showWelcomeScreen) {
-                        showAccountDialog = false
-                    }
-                }
-
                 val pauseListenHistory by rememberPreference(PauseListenHistoryKey, defaultValue = false)
                 val eventCount by database.eventCount().collectAsStateWithLifecycle(initialValue = 0)
                 val showHistoryButton =
@@ -1397,12 +1379,6 @@ class MainActivity : ComponentActivity() {
                                 homeViewModel.refresh()
                             },
                             latestVersionName = latestVersionName,
-                        )
-                    }
-
-                    if (showWelcomeScreen) {
-                        com.rythim.music.ui.screens.WelcomeScreen(
-                            onLoginClick = { showAccountDialog = true }
                         )
                     }
 

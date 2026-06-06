@@ -15,6 +15,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+data class SongSuggestion(
+    val title: String,
+    val artist: String,
+)
+
 object OpenRouterService {
     private val client =
         OkHttpClient
@@ -367,6 +372,144 @@ Output MUST be a JSON array with EXACTLY $lineCount strings."""
                             .trim()
                     }
                 Result.success(content)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun recommend(
+        userPrompt: String,
+        apiKey: String,
+        baseUrl: String,
+        model: String,
+        provider: String,
+        targetLanguage: String = "English",
+        count: Int = 10,
+    ): Result<List<SongSuggestion>> =
+        withContext(Dispatchers.IO) {
+            if (apiKey.isBlank()) return@withContext Result.failure(Exception("API key required"))
+            if (userPrompt.isBlank()) return@withContext Result.failure(Exception("Prompt is empty"))
+            try {
+                val systemPrompt =
+                    "You are a music recommendation expert with deep knowledge of every genre. " +
+                        "Given a user's mood, situation, vibe, or description, you recommend real songs that match. " +
+                        "Output ONLY a JSON array of objects with this exact shape: " +
+                        "[{\"title\":\"Song Name\",\"artist\":\"Artist Name\"}]. " +
+                        "Rules: NO markdown, NO explanations, NO trailing commentary. " +
+                        "Return EXACTLY $count items. Use real, popular songs that exist on YouTube Music. " +
+                        "Provide a diverse mix of artists. Use accurate song titles and primary artist names " +
+                        "(no \"feat.\" or remixers, just the lead artist). The display language hint is $targetLanguage, " +
+                        "but always use each song's original title and artist in their native script — never translate them."
+                val userMessage =
+                    "Recommend $count songs based on this prompt: \"$userPrompt\". Return the JSON array only."
+
+                val isClaude = provider == "Claude"
+
+                val request =
+                    if (isClaude) {
+                        val messages =
+                            JSONArray().apply {
+                                put(JSONObject().apply {
+                                    put("role", "user")
+                                    put("content", userMessage)
+                                })
+                            }
+                        val body =
+                            JSONObject().apply {
+                                put("model", model.ifBlank { "claude-haiku-4-5-20251001" })
+                                put("max_tokens", 1200)
+                                put("temperature", 0.7)
+                                put("system", systemPrompt)
+                                put("messages", messages)
+                            }
+                        Request.Builder()
+                            .url(baseUrl.ifBlank { "https://api.anthropic.com/v1/messages" })
+                            .addHeader("x-api-key", apiKey.trim())
+                            .addHeader("anthropic-version", "2023-06-01")
+                            .addHeader("Content-Type", "application/json")
+                            .post(body.toString().toRequestBody(JSON))
+                            .build()
+                    } else {
+                        val messages =
+                            JSONArray().apply {
+                                put(JSONObject().apply {
+                                    put("role", "system")
+                                    put("content", systemPrompt)
+                                })
+                                put(JSONObject().apply {
+                                    put("role", "user")
+                                    put("content", userMessage)
+                                })
+                            }
+                        val body =
+                            JSONObject().apply {
+                                if (model.isNotBlank()) put("model", model)
+                                put("messages", messages)
+                                put("temperature", 0.7)
+                                put("max_tokens", 1200)
+                            }
+                        Request.Builder()
+                            .url(baseUrl.ifBlank { "https://openrouter.ai/api/v1/chat/completions" })
+                            .addHeader("Authorization", "Bearer ${apiKey.trim()}")
+                            .addHeader("Content-Type", "application/json")
+                            .addHeader("HTTP-Referer", "https://github.com/Yamzzdev/Rythim-Music")
+                            .addHeader("X-Title", "Rythim Music")
+                            .post(body.toString().toRequestBody(JSON))
+                            .build()
+                    }
+
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string()
+                    ?: return@withContext Result.failure(Exception("Empty response"))
+                if (!response.isSuccessful)
+                    return@withContext Result.failure(Exception("API error ${response.code}: $responseBody"))
+
+                var content =
+                    if (isClaude) {
+                        JSONObject(responseBody)
+                            .getJSONArray("content")
+                            .getJSONObject(0)
+                            .getString("text")
+                            .trim()
+                    } else {
+                        JSONObject(responseBody)
+                            .getJSONArray("choices")
+                            .getJSONObject(0)
+                            .getJSONObject("message")
+                            .getString("content")
+                            .trim()
+                    }
+
+                // Multi-strategy JSON extraction (LLMs love adding extra prose)
+                val jsonArray: JSONArray = try {
+                    JSONArray(content)
+                } catch (_: Exception) {
+                    content = content.replace("```json", "").replace("```", "").trim()
+                    try {
+                        JSONArray(content)
+                    } catch (_: Exception) {
+                        val start = content.indexOf('[')
+                        val end = content.lastIndexOf(']')
+                        if (start != -1 && end > start) {
+                            JSONArray(content.substring(start, end + 1))
+                        } else {
+                            return@withContext Result.failure(Exception("Could not parse AI response as JSON"))
+                        }
+                    }
+                }
+
+                val suggestions = (0 until jsonArray.length()).mapNotNull { i ->
+                    val obj = jsonArray.optJSONObject(i) ?: return@mapNotNull null
+                    val title = obj.optString("title").trim()
+                    val artist = obj.optString("artist").trim()
+                    if (title.isBlank() || artist.isBlank()) null else SongSuggestion(title, artist)
+                }
+
+                if (suggestions.isEmpty()) {
+                    Result.failure(Exception("AI returned no usable suggestions"))
+                } else {
+                    Result.success(suggestions)
+                }
             } catch (e: Exception) {
                 Result.failure(e)
             }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    <!-- Main 4-point sparkle -->
+    <path android:fillColor="@android:color/white"
+        android:pathData="M11,3 L12.6,8.4 L18,10 L12.6,11.6 L11,17 L9.4,11.6 L4,10 L9.4,8.4 Z"/>
+    <!-- Small sparkle top-right -->
+    <path android:fillColor="@android:color/white"
+        android:pathData="M18,14 L18.7,16.3 L21,17 L18.7,17.7 L18,20 L17.3,17.7 L15,17 L17.3,16.3 Z"/>
+</vector>

@@ -43,12 +43,14 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -160,6 +162,7 @@ import com.rythim.music.ui.utils.SnapLayoutInfoProvider
 import com.rythim.music.ui.utils.resize
 import com.rythim.music.utils.joinByBullet
 import com.rythim.music.utils.joinToArtistString
+import com.rythim.music.ui.sheet.AiRecommendationSheet
 import com.rythim.music.utils.makeTimeString
 import com.rythim.music.utils.rememberEnumPreference
 import com.rythim.music.utils.rememberPreference
@@ -1128,6 +1131,9 @@ fun HomeScreen(
         forgottenFavoritesLazyGridState.scrollToItem(0)
     }
 
+    var showAiSheet by rememberSaveable { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     PullToRefreshBox(
         state = pullRefreshState,
         isRefreshing = isRefreshing,
@@ -2601,5 +2607,25 @@ fun HomeScreen(
                 },
             )
         }
+    }
+
+        FloatingActionButton(
+            onClick = { showAiSheet = true },
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                .padding(end = 16.dp, bottom = 16.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.sparkle_ai),
+                contentDescription = "Saran AI",
+            )
+        }
+    }
+
+    if (showAiSheet) {
+        AiRecommendationSheet(onDismiss = { showAiSheet = false })
     }
 }
