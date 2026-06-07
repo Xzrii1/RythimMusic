@@ -157,7 +157,6 @@ import com.rythim.music.constants.SlimNavBarHeight
 import com.rythim.music.constants.SlimNavBarKey
 import com.rythim.music.constants.StopMusicOnTaskClearKey
 import com.rythim.music.constants.UpdateNotificationsEnabledKey
-import com.rythim.music.constants.UseNewMiniPlayerDesignKey
 import com.rythim.music.db.MusicDatabase
 import com.rythim.music.db.entities.SearchHistory
 import com.rythim.music.extensions.toEnum
@@ -713,7 +712,8 @@ class MainActivity : ComponentActivity() {
                     navigationItems.mapIndexed { i, s -> s.route to i }.toMap()
                 }
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
-                val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
+                // Locked: see MiniPlayer.kt and AppearanceSettings.kt for the rationale.
+                val useNewMiniPlayerDesign = true
                 val (defaultOpenTabInt) = rememberPreference(DefaultOpenTabKey, defaultValue = NavigationTab.HOME.name)
                 val defaultOpenTab = remember(defaultOpenTabInt) {
                     try {

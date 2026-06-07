@@ -106,7 +106,6 @@ import com.rythim.music.R
 import com.rythim.music.constants.ListItemHeight
 import com.rythim.music.constants.PlayerBackgroundStyle
 import com.rythim.music.constants.QueueEditLockKey
-import com.rythim.music.constants.UseNewPlayerDesignKey
 import com.rythim.music.extensions.metadata
 import com.rythim.music.extensions.move
 import com.rythim.music.extensions.toggleRepeatMode
@@ -216,11 +215,8 @@ fun Queue(
 
     var locked by rememberPreference(QueueEditLockKey, defaultValue = true)
 
-    val (useNewPlayerDesign, onUseNewPlayerDesignChange) =
-        rememberPreference(
-            UseNewPlayerDesignKey,
-            defaultValue = true,
-        )
+    // Locked: see Player.kt and AppearanceSettings.kt.
+    val useNewPlayerDesign = false
 
     val snackbarHostState = remember { SnackbarHostState() }
     var dismissJob: Job? by remember { mutableStateOf(null) }

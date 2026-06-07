@@ -92,7 +92,6 @@ import com.rythim.music.constants.PureBlackMiniPlayerKey
 import com.rythim.music.constants.SwipeSensitivityKey
 import com.rythim.music.constants.SwipeThumbnailKey
 import com.rythim.music.constants.ThumbnailCornerRadius
-import com.rythim.music.constants.UseNewMiniPlayerDesignKey
 import com.rythim.music.db.entities.ArtistEntity
 import com.rythim.music.listentogether.ListenTogetherManager
 import com.rythim.music.models.MediaMetadata
@@ -147,7 +146,9 @@ fun MiniPlayer(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    val useNewMiniPlayerDesign by rememberPreference(UseNewMiniPlayerDesignKey, false)
+    // Locked to the new Spotify-style mini-player — toggle was removed from
+    // AppearanceSettings to prevent split-brain defaults across call sites.
+    val useNewMiniPlayerDesign = true
 
     // Create stable progress state - doesn't cause recomposition on position changes
     val progressState = remember { ProgressState(positionState, durationState) }

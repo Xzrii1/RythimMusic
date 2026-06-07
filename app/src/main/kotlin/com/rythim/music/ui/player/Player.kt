@@ -155,7 +155,6 @@ import com.rythim.music.constants.SliderStyle
 import com.rythim.music.constants.SliderStyleKey
 import com.rythim.music.constants.SquigglySliderKey
 import com.rythim.music.constants.ThumbnailCornerRadius
-import com.rythim.music.constants.UseNewPlayerDesignKey
 import com.rythim.music.db.entities.LyricsEntity
 import com.rythim.music.extensions.metadata
 import com.rythim.music.extensions.togglePlayPause
@@ -216,11 +215,8 @@ fun BottomSheetPlayer(
     val bottomSheetPageState = LocalBottomSheetPageState.current
     val playerConnection = LocalPlayerConnection.current ?: return
 
-    val (useNewPlayerDesign, onUseNewPlayerDesignChange) =
-        rememberPreference(
-            UseNewPlayerDesignKey,
-            defaultValue = false,
-        )
+    // Locked to the legacy big-player design — toggle removed from AppearanceSettings.
+    val useNewPlayerDesign = false
     val (hidePlayerThumbnail, onHidePlayerThumbnailChange) = rememberPreference(HidePlayerThumbnailKey, false)
     val (hideStatusBarOnFullscreen) = rememberPreference(HideStatusBarOnFullscreenKey, false)
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)

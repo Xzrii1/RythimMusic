@@ -660,7 +660,14 @@ fun PlayerMenu(
                                         }
                                     }
                                 },
-                                onClick = { showListenTogetherDialog = true },
+                                onClick = {
+                                    // Gated as "Coming Soon" — feature still in active development.
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.listen_together_coming_soon),
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                },
                             ),
                         )
                         if (isListenTogetherGuest) {
