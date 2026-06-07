@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,10 +68,36 @@ import com.rythim.music.constants.OpenRouterModelKey
 import com.rythim.music.constants.TranslateLanguageKey
 import com.rythim.music.extensions.toMediaItem
 import com.rythim.music.playback.queues.ListQueue
+import com.rythim.music.ui.component.EnumDialog
 import com.rythim.music.utils.rememberPreference
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+
+// Shared with AiSettings — duplicated here so the sheet is self-healing:
+// any inconsistency between aiProvider / openRouterBaseUrl / openRouterModel
+// in DataStore gets corrected the moment the user picks a provider in the sheet.
+private val PROVIDER_BASE_URLS = mapOf(
+    "OpenRouter" to "https://openrouter.ai/api/v1/chat/completions",
+    "OpenAI" to "https://api.openai.com/v1/chat/completions",
+    "Perplexity" to "https://api.perplexity.ai/chat/completions",
+    "Claude" to "https://api.anthropic.com/v1/messages",
+    "Gemini" to "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    "XAi" to "https://api.x.ai/v1/chat/completions",
+    "Mistral" to "https://api.mistral.ai/v1/chat/completions",
+    "DeepL" to "https://api.deepl.com/v2/translate",
+    "Custom" to "",
+)
+
+private val PROVIDER_DEFAULT_MODELS = mapOf(
+    "OpenRouter" to "google/gemini-2.5-flash-lite",
+    "OpenAI" to "gpt-4o-mini",
+    "Perplexity" to "sonar",
+    "Claude" to "claude-haiku-4-5-20251001",
+    "Gemini" to "gemini-flash-lite-latest",
+    "XAi" to "grok-4-1-fast",
+    "Mistral" to "mistral-small-latest",
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,60 +110,95 @@ fun AiRecommendationSheet(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     var openRouterApiKey by rememberPreference(OpenRouterApiKey, "")
-    val aiProvider by rememberPreference(AiProviderKey, "OpenRouter")
-    val openRouterBaseUrl by rememberPreference(OpenRouterBaseUrlKey, OpenRouterDefaultBaseUrl)
-    val openRouterModel by rememberPreference(OpenRouterModelKey, OpenRouterDefaultModel)
+    var aiProvider by rememberPreference(AiProviderKey, "OpenRouter")
+    var openRouterBaseUrl by rememberPreference(OpenRouterBaseUrlKey, OpenRouterDefaultBaseUrl)
+    var openRouterModel by rememberPreference(OpenRouterModelKey, OpenRouterDefaultModel)
     val translateLanguage by rememberPreference(TranslateLanguageKey, "en")
 
-    val hasApiKey = aiProvider != "DeepL" && openRouterApiKey.isNotBlank()
     val isDeepL = aiProvider == "DeepL"
+    val hasApiKey = openRouterApiKey.isNotBlank()
 
     var prompt by rememberSaveable { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var results by remember { mutableStateOf<List<SongItem>>(emptyList()) }
     var apiKeyInput by rememberSaveable { mutableStateOf("") }
+    var showApiKeyEditor by rememberSaveable { mutableStateOf(false) }
+    var showProviderPicker by rememberSaveable { mutableStateOf(false) }
 
-    val submit: () -> Unit = {
-        if (prompt.isNotBlank() && !isLoading) {
-            coroutineScope.launch {
-                isLoading = true
-                error = null
-                results = emptyList()
-                keyboardController?.hide()
+    fun applyProvider(newProvider: String) {
+        aiProvider = newProvider
+        when (newProvider) {
+            "Custom" -> openRouterBaseUrl = ""
+            "DeepL" -> openRouterBaseUrl = PROVIDER_BASE_URLS[newProvider] ?: ""
+            else -> openRouterBaseUrl = PROVIDER_BASE_URLS[newProvider] ?: ""
+        }
+        PROVIDER_DEFAULT_MODELS[newProvider]?.let { openRouterModel = it }
+        // Clear stale results — they were generated for a different provider
+        results = emptyList()
+        error = null
+    }
 
-                val aiResult = OpenRouterService.recommend(
-                    userPrompt = prompt,
-                    apiKey = openRouterApiKey,
-                    baseUrl = openRouterBaseUrl,
-                    model = openRouterModel,
-                    provider = aiProvider,
-                    targetLanguage = LanguageCodeToName[translateLanguage] ?: translateLanguage,
-                )
+    if (showProviderPicker) {
+        EnumDialog(
+            onDismiss = { showProviderPicker = false },
+            onSelect = {
+                applyProvider(it)
+                showProviderPicker = false
+            },
+            title = "Pilih AI Provider",
+            current = aiProvider,
+            values = PROVIDER_BASE_URLS.keys.toList(),
+            valueText = { it },
+        )
+    }
 
-                aiResult.onSuccess { suggestions ->
-                    val deferred = suggestions.map { sug ->
-                        async {
-                            YouTube.search("${sug.title} ${sug.artist}", YouTube.SearchFilter.FILTER_SONG)
-                                .getOrNull()
-                                ?.items
-                                ?.filterIsInstance<SongItem>()
-                                ?.firstOrNull()
-                        }
+    val submit: () -> Unit = submit@{
+        if (prompt.isBlank() || isLoading) return@submit
+        if (isDeepL) {
+            error = "DeepL tidak mendukung saran lagu. Pilih provider lain di atas."
+            return@submit
+        }
+        if (!hasApiKey) {
+            error = "API key kosong. Tap chip 'API key' di atas."
+            return@submit
+        }
+        coroutineScope.launch {
+            isLoading = true
+            error = null
+            results = emptyList()
+            keyboardController?.hide()
+
+            val aiResult = OpenRouterService.recommend(
+                userPrompt = prompt,
+                apiKey = openRouterApiKey,
+                baseUrl = openRouterBaseUrl,
+                model = openRouterModel,
+                provider = aiProvider,
+                targetLanguage = LanguageCodeToName[translateLanguage] ?: translateLanguage,
+            )
+
+            aiResult.onSuccess { suggestions ->
+                val deferred = suggestions.map { sug ->
+                    async {
+                        YouTube.search("${sug.title} ${sug.artist}", YouTube.SearchFilter.FILTER_SONG)
+                            .getOrNull()
+                            ?.items
+                            ?.filterIsInstance<SongItem>()
+                            ?.firstOrNull()
                     }
-                    val songs = deferred.awaitAll().filterNotNull().distinctBy { it.id }
-
-                    if (songs.isEmpty()) {
-                        error = "Lagu tidak ditemukan di YouTube Music. Coba prompt yang lebih spesifik."
-                    } else {
-                        results = songs
-                    }
-                }.onFailure {
-                    error = it.message ?: "Gagal mengambil saran AI"
                 }
-
-                isLoading = false
+                val songs = deferred.awaitAll().filterNotNull().distinctBy { it.id }
+                if (songs.isEmpty()) {
+                    error = "Lagu tidak ditemukan di YouTube Music. Coba prompt yang lebih spesifik."
+                } else {
+                    results = songs
+                }
+            }.onFailure {
+                error = it.message ?: "Gagal mengambil saran AI"
             }
+
+            isLoading = false
         }
     }
 
@@ -171,146 +234,196 @@ fun AiRecommendationSheet(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
-            when {
-                isDeepL -> {
-                    Text(
-                        text = "DeepL tidak mendukung saran lagu. Ganti provider AI di Settings > AI lyrics translation.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+            // Provider + API key chips — fix root cause of any mismatched state
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                AssistChip(
+                    onClick = { showProviderPicker = true },
+                    label = { Text(aiProvider) },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.explore_outlined),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.expand_more),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    },
+                )
+                AssistChip(
+                    onClick = {
+                        apiKeyInput = openRouterApiKey
+                        showApiKeyEditor = !showApiKeyEditor
+                    },
+                    label = { Text(if (hasApiKey) "API key tersimpan" else "Set API key") },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.key),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    },
+                    colors = if (!hasApiKey) {
+                        AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            labelColor = MaterialTheme.colorScheme.onErrorContainer,
+                            leadingIconContentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    } else {
+                        AssistChipDefaults.assistChipColors()
+                    },
+                )
+            }
 
-                !hasApiKey -> {
-                    Text(
-                        text = "Atur AI API key dulu buat pakai fitur ini.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = apiKeyInput,
-                        onValueChange = { apiKeyInput = it },
-                        placeholder = { Text("Paste API key di sini") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(8.dp))
+            if (showApiKeyEditor) {
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = apiKeyInput,
+                    onValueChange = { apiKeyInput = it },
+                    placeholder = { Text("Paste API key di sini") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TextButton(onClick = { showApiKeyEditor = false }) {
+                        Text("Batal")
+                    }
+                    Spacer(Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            if (apiKeyInput.isNotBlank()) {
-                                openRouterApiKey = apiKeyInput
-                                apiKeyInput = ""
-                            }
+                            openRouterApiKey = apiKeyInput.trim()
+                            apiKeyInput = ""
+                            showApiKeyEditor = false
                         },
-                        modifier = Modifier.align(Alignment.End),
+                        enabled = apiKeyInput.isNotBlank(),
                     ) {
                         Text("Simpan")
                     }
                 }
+            }
 
-                else -> {
-                    OutlinedTextField(
-                        value = prompt,
-                        onValueChange = { prompt = it },
-                        placeholder = { Text("Misal: lagu sedih buat hujan-hujanan") },
-                        singleLine = false,
-                        maxLines = 3,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { submit() }),
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
-                            IconButton(
-                                onClick = submit,
-                                enabled = !isLoading && prompt.isNotBlank(),
-                            ) {
-                                if (isLoading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        strokeWidth = 2.dp,
-                                    )
-                                } else {
-                                    Icon(
-                                        painter = painterResource(R.drawable.arrow_upward),
-                                        contentDescription = "Cari",
-                                    )
-                                }
-                            }
-                        },
-                    )
+            Spacer(Modifier.height(16.dp))
 
-                    error?.let { msg ->
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = msg,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-
-                    if (results.isNotEmpty()) {
-                        Spacer(Modifier.height(20.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth(),
+            if (isDeepL) {
+                Text(
+                    text = "DeepL tidak mendukung saran lagu. Ganti provider di atas.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            } else {
+                OutlinedTextField(
+                    value = prompt,
+                    onValueChange = { prompt = it },
+                    placeholder = { Text("Misal: lagu sedih buat hujan-hujanan") },
+                    singleLine = false,
+                    maxLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { submit() }),
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        IconButton(
+                            onClick = submit,
+                            enabled = !isLoading && prompt.isNotBlank() && hasApiKey,
                         ) {
-                            Text(
-                                text = "${results.size} lagu untuk kamu",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Medium,
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(R.drawable.arrow_upward),
+                                    contentDescription = "Cari",
+                                )
+                            }
+                        }
+                    },
+                )
+
+                error?.let { msg ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = msg,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
+                if (results.isNotEmpty()) {
+                    Spacer(Modifier.height(20.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = "${results.size} lagu untuk kamu",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        TextButton(
+                            onClick = {
+                                playerConnection.playQueue(
+                                    ListQueue(
+                                        title = prompt.take(40),
+                                        items = results.map { it.toMediaItem() },
+                                    ),
+                                )
+                                onDismiss()
+                            },
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.play),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
                             )
-                            TextButton(
+                            Spacer(Modifier.width(4.dp))
+                            Text("Putar semua")
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 420.dp),
+                    ) {
+                        items(results, key = { it.id }) { song ->
+                            SuggestionRow(
+                                song = song,
                                 onClick = {
+                                    val start = results.indexOf(song).coerceAtLeast(0)
+                                    val ordered = results.drop(start) + results.take(start)
                                     playerConnection.playQueue(
                                         ListQueue(
-                                            title = prompt.take(40),
-                                            items = results.map { it.toMediaItem() },
+                                            title = song.title,
+                                            items = ordered.map { it.toMediaItem() },
                                         ),
                                     )
                                     onDismiss()
                                 },
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.play),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text("Putar semua")
-                            }
+                            )
                         }
-                        Spacer(Modifier.height(4.dp))
-
-                        LazyColumn(
-                            modifier = Modifier.heightIn(max = 420.dp),
-                        ) {
-                            items(results, key = { it.id }) { song ->
-                                SuggestionRow(
-                                    song = song,
-                                    onClick = {
-                                        // Play tapped song first, queue the rest after
-                                        val start = results.indexOf(song).coerceAtLeast(0)
-                                        val ordered = results.drop(start) + results.take(start)
-                                        playerConnection.playQueue(
-                                            ListQueue(
-                                                title = song.title,
-                                                items = ordered.map { it.toMediaItem() },
-                                            ),
-                                        )
-                                        onDismiss()
-                                    },
-                                )
-                            }
-                        }
-                    } else if (!isLoading && error == null) {
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = "Tekan tombol kirim atau Enter untuk mulai.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
+                } else if (!isLoading && error == null) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "Tekan tombol kirim atau Enter untuk mulai.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
