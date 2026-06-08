@@ -35,6 +35,7 @@ import com.rythim.music.db.entities.ArtistEntity
 import com.rythim.music.db.entities.Event
 import com.rythim.music.db.entities.EventWithSong
 import com.rythim.music.db.entities.FormatEntity
+import com.rythim.music.db.entities.AiSummaryEntity
 import com.rythim.music.db.entities.LyricsEntity
 import com.rythim.music.db.entities.PlayCountEntity
 import com.rythim.music.db.entities.Playlist
@@ -715,6 +716,12 @@ interface DatabaseDao {
     @Transaction
     @Query("SELECT * FROM lyrics WHERE id = :id")
     fun lyrics(id: String?): Flow<LyricsEntity?>
+
+    @Query("SELECT * FROM ai_summary WHERE songId = :songId")
+    suspend fun getAiSummary(songId: String): AiSummaryEntity?
+
+    @Upsert
+    suspend fun upsertAiSummary(summary: AiSummaryEntity)
 
     @Transaction
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)

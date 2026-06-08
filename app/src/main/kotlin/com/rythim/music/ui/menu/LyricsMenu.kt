@@ -131,6 +131,13 @@ fun LyricsMenu(
     var summaryError by rememberSaveable(songId) { mutableStateOf<String?>(null) }
     var apiKeyInput by rememberSaveable { mutableStateOf("") }
 
+    LaunchedEffect(songId) {
+        if (summaryText == null) {
+            val cached = database.getAiSummary(songId)
+            if (cached != null) summaryText = cached.summary
+        }
+    }
+
     var showEditDialog by rememberSaveable {
         mutableStateOf(false)
     }
@@ -556,8 +563,17 @@ fun LyricsMenu(
                                             targetLanguage = LanguageCodeToName[translateLanguage] ?: translateLanguage,
                                         )
                                         isSummaryLoading = false
-                                        result.onSuccess { summaryText = it }
-                                            .onFailure { summaryError = it.message }
+                                        result.onSuccess {
+                                            summaryText = it
+                                            database.upsertAiSummary(
+                                                com.rythim.music.db.entities.AiSummaryEntity(
+                                                    songId = songId,
+                                                    summary = it,
+                                                    provider = aiProvider,
+                                                    language = translateLanguage,
+                                                )
+                                            )
+                                        }.onFailure { summaryError = it.message }
                                     }
                                 },
                             ) {
@@ -589,8 +605,17 @@ fun LyricsMenu(
                                             targetLanguage = LanguageCodeToName[translateLanguage] ?: translateLanguage,
                                         )
                                         isSummaryLoading = false
-                                        result.onSuccess { summaryText = it }
-                                            .onFailure { summaryError = it.message }
+                                        result.onSuccess {
+                                            summaryText = it
+                                            database.upsertAiSummary(
+                                                com.rythim.music.db.entities.AiSummaryEntity(
+                                                    songId = songId,
+                                                    summary = it,
+                                                    provider = aiProvider,
+                                                    language = translateLanguage,
+                                                )
+                                            )
+                                        }.onFailure { summaryError = it.message }
                                     }
                                 },
                             ) {

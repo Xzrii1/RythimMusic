@@ -233,7 +233,7 @@
 
     <!-- Settings -->
     <string name="settings">Settings</string>
-    <string name="appearance">Appearance</string>
+    <string name="appearance">Personalize</string>
     <string name="theme">Theme</string>
     <string name="theme_desc">Customize your app theme</string>
     <string name="theme_colors">Theme &amp; Colors</string>
@@ -263,7 +263,7 @@
     <string name="small">Small</string>
     <string name="big">Big</string>
 
-    <string name="content">Content</string>
+    <string name="content">Discovery</string>
     <string name="action_logout">Log out</string>
     <string name="action_login">Log in</string>
     <string name="login">Login</string>
@@ -278,7 +278,7 @@
     <string name="proxy_url">Proxy URL</string>
     <string name="restart_to_take_effect">Restart to take effect</string>
 
-    <string name="player_and_audio">Player and audio</string>
+    <string name="player_and_audio">Player &amp; Audio</string>
     <string name="audio_quality">Audio quality</string>
     <string name="audio_quality_auto">Auto</string>
     <string name="audio_quality_high">High</string>
@@ -295,7 +295,7 @@
     <string name="stop_music_on_task_clear">Stop music on task clear</string>
     <string name="equalizer">Equalizer</string>
 
-    <string name="storage">Storage</string>
+    <string name="storage">Storage &amp; Downloads</string>
     <string name="cache">Cache</string>
     <string name="image_cache">Image Cache</string>
     <string name="song_cache">Song Cache</string>
@@ -308,7 +308,7 @@
     <string name="clear_song_cache">Clear song cache</string>
     <string name="size_used">%s used</string>
 
-    <string name="privacy">Privacy</string>
+    <string name="privacy">Privacy &amp; Data</string>
     <string name="listen_history">Listen history</string>
     <string name="pause_listen_history">Pause listen history</string>
     <string name="clear_listen_history">Clear listen history</string>
@@ -325,7 +325,7 @@
     <string name="enable_kugou">Enable KuGou lyrics provider</string>
     <string name="hide_explicit">Hide explicit content</string>
 
-    <string name="backup_restore">Backup and restore</string>
+    <string name="backup_restore">Backup &amp; Restore</string>
     <string name="action_backup">Backup</string>
     <string name="action_restore">Restore</string>
     <string name="imported_playlist">Imported playlist</string>
@@ -337,7 +337,7 @@
     <string name="options">Options</string>
     <string name="preview">Preview</string>
 
-    <string name="about">About</string>
+    <string name="about">About Rythim</string>
     <string name="app_version">App version</string>
 
     <string name="new_version_available">New version available</string>

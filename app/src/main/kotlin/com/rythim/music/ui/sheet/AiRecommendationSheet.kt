@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.rythim.innertube.YouTube
 import com.rythim.innertube.models.SongItem
+import com.rythim.music.LocalDatabase
 import com.rythim.music.LocalPlayerConnection
 import com.rythim.music.R
 import com.rythim.music.api.OpenRouterService
@@ -67,9 +68,12 @@ import com.rythim.music.constants.OpenRouterDefaultModel
 import com.rythim.music.constants.OpenRouterModelKey
 import com.rythim.music.constants.TranslateLanguageKey
 import com.rythim.music.extensions.toMediaItem
+import com.rythim.music.models.toMediaMetadata
 import com.rythim.music.playback.queues.ListQueue
 import com.rythim.music.ui.component.EnumDialog
+import com.rythim.music.ui.menu.AddToPlaylistDialog
 import com.rythim.music.utils.rememberPreference
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
@@ -105,6 +109,7 @@ fun AiRecommendationSheet(
     onDismiss: () -> Unit,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
+    val database = LocalDatabase.current
     val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -125,6 +130,8 @@ fun AiRecommendationSheet(
     var apiKeyInput by rememberSaveable { mutableStateOf("") }
     var showApiKeyEditor by rememberSaveable { mutableStateOf(false) }
     var showProviderPicker by rememberSaveable { mutableStateOf(false) }
+    var songForPlaylist by remember { mutableStateOf<SongItem?>(null) }
+    var showAddAllToPlaylist by remember { mutableStateOf(false) }
 
     fun applyProvider(newProvider: String) {
         aiProvider = newProvider
@@ -200,6 +207,45 @@ fun AiRecommendationSheet(
 
             isLoading = false
         }
+    }
+
+    // Add single song to playlist dialog
+    songForPlaylist?.let { song ->
+        AddToPlaylistDialog(
+            isVisible = true,
+            onGetSong = { playlist ->
+                database.withTransaction {
+                    insert(song.toMediaMetadata())
+                }
+                coroutineScope.launch(Dispatchers.IO) {
+                    playlist.playlist.browseId?.let { YouTube.addToPlaylist(it, song.id) }
+                }
+                listOf(song.id)
+            },
+            onGetSongIds = { listOf(song.id) },
+            onDismiss = { songForPlaylist = null },
+        )
+    }
+
+    // Add all results to playlist dialog
+    if (showAddAllToPlaylist && results.isNotEmpty()) {
+        AddToPlaylistDialog(
+            isVisible = true,
+            onGetSong = { playlist ->
+                val ids = results.map { it.id }
+                database.withTransaction {
+                    results.forEach { insert(it.toMediaMetadata()) }
+                }
+                coroutineScope.launch(Dispatchers.IO) {
+                    playlist.playlist.browseId?.let { browseId ->
+                        ids.forEach { YouTube.addToPlaylist(browseId, it) }
+                    }
+                }
+                ids
+            },
+            onGetSongIds = { results.map { it.id } },
+            onDismiss = { showAddAllToPlaylist = false },
+        )
     }
 
     ModalBottomSheet(
@@ -375,24 +421,37 @@ fun AiRecommendationSheet(
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium,
                         )
-                        TextButton(
-                            onClick = {
-                                playerConnection.playQueue(
-                                    ListQueue(
-                                        title = prompt.take(40),
-                                        items = results.map { it.toMediaItem() },
-                                    ),
+                        Row {
+                            TextButton(
+                                onClick = { showAddAllToPlaylist = true },
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.add),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
                                 )
-                                onDismiss()
-                            },
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.play),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Putar semua")
+                                Spacer(Modifier.width(4.dp))
+                                Text("Playlist")
+                            }
+                            TextButton(
+                                onClick = {
+                                    playerConnection.playQueue(
+                                        ListQueue(
+                                            title = prompt.take(40),
+                                            items = results.map { it.toMediaItem() },
+                                        ),
+                                    )
+                                    onDismiss()
+                                },
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.play),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text("Putar semua")
+                            }
                         }
                     }
                     Spacer(Modifier.height(4.dp))
@@ -414,6 +473,7 @@ fun AiRecommendationSheet(
                                     )
                                     onDismiss()
                                 },
+                                onAddToPlaylist = { songForPlaylist = song },
                             )
                         }
                     }
@@ -434,6 +494,7 @@ fun AiRecommendationSheet(
 private fun SuggestionRow(
     song: SongItem,
     onClick: () -> Unit,
+    onAddToPlaylist: () -> Unit,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -454,9 +515,7 @@ private fun SuggestionRow(
             )
         }
         Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier
-            .weight(1f)
-            .padding(end = 8.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.bodyMedium,
@@ -470,6 +529,14 @@ private fun SuggestionRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+        IconButton(onClick = onAddToPlaylist) {
+            Icon(
+                painter = painterResource(R.drawable.add),
+                contentDescription = "Tambah ke playlist",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

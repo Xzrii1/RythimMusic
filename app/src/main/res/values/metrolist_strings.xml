@@ -373,11 +373,11 @@
     <string name="lyrics_offset">Lyrics offset</string>
 
     <!-- Material 3 Settings Sections -->
-    <string name="settings_section_ui">Interface</string>
+    <string name="settings_section_ui">Look &amp; Feel</string>
     <string name="settings_section_privacy">Privacy &amp; Security</string>
-    <string name="settings_section_player_content">Player &amp; Content</string>
-    <string name="settings_section_storage">Storage &amp; Data</string>
-    <string name="settings_section_system">System &amp; About</string>
+    <string name="settings_section_player_content">Playback &amp; Content</string>
+    <string name="settings_section_storage">Storage &amp; Cache</string>
+    <string name="settings_section_system">App &amp; Updates</string>
 
     <!-- Updater -->
     <string name="updater">Updater</string>
@@ -683,7 +683,7 @@
     <string name="user_blocked_by_host">Blocked by host</string>
 
     <!-- AI Lyrics Translation -->
-    <string name="ai_lyrics_translation">AI lyrics translation</string>
+    <string name="ai_lyrics_translation">AI Features</string>
     <string name="ai_translating_lyrics">Translating lyrics…</string>
     <string name="ai_lyrics_translated">Lyrics translated</string>
     <string name="ai_provider">Provider</string>
