@@ -463,7 +463,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            MetrolistApp(
+            RythimApp(
                 latestVersionName = latestVersionName,
                 onLatestVersionNameChange = { latestVersionName = it },
                 playerConnection = playerConnectionSnapshot,
@@ -477,7 +477,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun MetrolistApp(
+    private fun RythimApp(
         latestVersionName: String,
         onLatestVersionNameChange: (String) -> Unit,
         playerConnection: PlayerConnection?,
