@@ -646,10 +646,14 @@ class MainActivity : ComponentActivity() {
                 }
         }
 
+        // Stable snapshot — RythimTheme only recomposes when these actually change,
+        // not on every intermediate state write during bitmap extraction.
+        val stableThemeColor by remember { derivedStateOf { themeColor } }
+
         RythimTheme(
             darkTheme = useDarkTheme,
             pureBlack = pureBlack,
-            themeColor = themeColor,
+            themeColor = stableThemeColor,
         ) {
             val currentDensity = LocalDensity.current
             val windowInfo = LocalWindowInfo.current
@@ -1313,9 +1317,9 @@ class MainActivity : ComponentActivity() {
                                         val previousRouteIndex = routeIndexMap[initialState.destination.route] ?: -1
 
                                         if (currentRouteIndex == -1 || currentRouteIndex > previousRouteIndex) {
-                                            slideInHorizontally { it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(tween(160)) { it / 10 } + fadeIn(tween(120))
                                         } else {
-                                            slideInHorizontally { -it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(tween(160)) { -it / 10 } + fadeIn(tween(120))
                                         }
                                     },
                                     exitTransition = {
@@ -1323,9 +1327,9 @@ class MainActivity : ComponentActivity() {
                                         val targetRouteIndex = routeIndexMap[targetState.destination.route] ?: -1
 
                                         if (targetRouteIndex == -1 || targetRouteIndex > currentRouteIndex) {
-                                            slideOutHorizontally { -it / 8 } + fadeOut(tween(200))
+                                            slideOutHorizontally(tween(160)) { -it / 10 } + fadeOut(tween(120))
                                         } else {
-                                            slideOutHorizontally { it / 8 } + fadeOut(tween(200))
+                                            slideOutHorizontally(tween(160)) { it / 10 } + fadeOut(tween(120))
                                         }
                                     },
                                     popEnterTransition = {
@@ -1333,9 +1337,9 @@ class MainActivity : ComponentActivity() {
                                         val previousRouteIndex = routeIndexMap[initialState.destination.route] ?: -1
 
                                         if (previousRouteIndex != -1 && previousRouteIndex < currentRouteIndex) {
-                                            slideInHorizontally { it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(tween(160)) { it / 10 } + fadeIn(tween(120))
                                         } else {
-                                            slideInHorizontally { -it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(tween(160)) { -it / 10 } + fadeIn(tween(120))
                                         }
                                     },
                                     popExitTransition = {
@@ -1343,9 +1347,9 @@ class MainActivity : ComponentActivity() {
                                         val targetRouteIndex = routeIndexMap[targetState.destination.route] ?: -1
 
                                         if (currentRouteIndex != -1 && currentRouteIndex < targetRouteIndex) {
-                                            slideOutHorizontally { -it / 8 } + fadeOut(tween(200))
+                                            slideOutHorizontally(tween(160)) { -it / 10 } + fadeOut(tween(120))
                                         } else {
-                                            slideOutHorizontally { it / 8 } + fadeOut(tween(200))
+                                            slideOutHorizontally(tween(160)) { it / 10 } + fadeOut(tween(120))
                                         }
                                     },
                                     modifier = Modifier.nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
