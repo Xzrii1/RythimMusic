@@ -20,7 +20,7 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
-val baseApplicationId = "com.rythim.music"
+val baseApplicationId = "com.zrexx.musicjir"
 val applicationIdOverride = System.getenv("RYTHIM_APPLICATION_ID")?.takeIf { it.isNotBlank() }
 val appNameOverride = System.getenv("RYTHIM_APP_NAME")?.takeIf { it.isNotBlank() }
 val debugKeystorePathOverride = System.getenv("RYTHIM_DEBUG_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }
